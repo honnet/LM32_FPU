@@ -1,0 +1,68 @@
+/****************************************
+ * linkscript for lm32_hello_world
+ *
+ * Maintainers: tarik.graba@telecom-paristech.fr
+ * 
+ ****************************************/
+
+
+OUTPUT_FORMAT("elf32-lm32")
+OUTPUT_ARCH(lm32)
+ENTRY(_start)
+GROUP(-lc)
+GROUP(-lgcc)
+
+MEMORY {
+    bram (rx) : ORIGIN = 0, LENGTH = 4K
+    sram (!rx): ORIGIN = 0x00100000 , LENGTH = 512K
+    sdram (!rx): ORIGIN = 0x01000000 , LENGTH = 8M
+    }
+
+__reset = ORIGIN(bram);
+__stack = ORIGIN(sram) +  LENGTH(sram)  - 4;
+
+SECTIONS
+{ 
+/* The program will be loaded into ram.
+ * bss shall be zeroed */
+    
+    . = ORIGIN(sram) ;
+    _start = .;
+
+    .text	:
+    {
+        crt0.o	(.text)
+               *(.text)
+    } > sram
+
+    . = ALIGN(4);
+
+    .rodata : 
+    { 
+        *(.rodata*)
+    } > sram
+
+    . = ALIGN(4);
+
+    .data : 
+    { 
+            *(.data*) 
+    } > sram
+
+    . = ALIGN(4);
+
+    .bss : 
+    { 
+        __bss_start__ = .;
+        *(.bss) 
+        *(COMMON)
+        __bss_end__ = .;
+    } > sram
+
+    . = ALIGN(4);
+    _heap = .;
+}
+
+/*
+  vim:se syntax=ld:
+ */

@@ -1,0 +1,76 @@
+/****************************************
+ * linkscript for lm32_hello_world
+ *
+ * Maintainers: tarik.graba@telecom-paristech.fr
+ *
+ ****************************************/
+
+
+OUTPUT_FORMAT("elf32-lm32")
+OUTPUT_ARCH(lm32)
+ENTRY(_start)
+GROUP(-lc)
+GROUP(-lgcc)
+
+MEMORY {
+    bram (rx) : ORIGIN = 0, LENGTH = 4K
+    sram (!rx): ORIGIN = 0x00100000, LENGTH = 512K
+    }
+
+__sram_start =  ORIGIN(sram);
+__sram_end   =  ORIGIN(sram) + LENGTH(sram);
+__stack =  __sram_end - 4 ;
+
+/* to avoid break stack and data when doing memtest*/
+__boot_reserved = __sram_end - 4K ;
+
+SECTIONS
+{
+/* The program will be loaded and exxecuted in bram.
+ * bss should be initialized.                       */
+
+    . = ORIGIN(bram) ;
+
+    .boot  :
+    {
+         boot.o	(.boot)
+    }
+
+    . = ALIGN(4);
+    .text	:
+    {
+               *(.text)
+    } > bram
+
+    . = ALIGN(4);
+    .rodata :
+    {
+        *(.rodata*)
+    } > bram
+
+    __end_of_text__ = . ;
+
+    . = ALIGN(4);
+    .data __boot_reserved : {
+            __data_start__ = . ;
+            *(.data*)
+            __data_end__ = . ;
+            } > sram AT>bram
+
+    . = ALIGN(4);
+
+    .bss : {
+        __bss_start__ = .;
+        *(.bss)
+        *(COMMON)
+        __bss_end__ = .;
+    } > sram 
+
+    . = ALIGN(4);
+
+    _heap = .;
+}
+
+/*
+  vim:se syntax=ld:
+ */

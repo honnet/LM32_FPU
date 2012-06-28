@@ -1,0 +1,39 @@
+#!/bin/sh
+
+START_ADDR=00100000
+
+function usage {
+    echo "Usage $0 file ttydev";
+    echo "      $0 -h  prints this message"
+    exit -1;
+}
+
+
+[[ $1 = "-h" ]] && usage
+[[ $# -ne 2 ]] &&  echo "Bad arguments" && usage
+
+FILE=$1
+TTY=$2
+
+[[ ! -f $FILE ]] && echo "Bad program file" && usage
+[[ ! -c $TTY ]]  && echo "Bad tty device"   && usage
+
+SIZE=`stat -c%s $FILE`
+SIZE=`printf "%08x" $[$SIZE/2]`
+
+echo "Uploading file $FILE of 0x$SIZE byte to $TTY"
+echo "                     with start adress 0x$START_ADDR"
+# command to load soft
+echo -n "u${START_ADDR}${SIZE}"> $TTY
+echo -n "..."
+
+# upload program file
+cat $FILE > $TTY
+echo -n "..."
+
+echo "DONE"
+echo "" > $TTY
+
+echo "Start of  program"
+# command to go to start address
+echo -n "g${START_ADDR}"> $TTY
